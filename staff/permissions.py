@@ -6,7 +6,7 @@ class IsAdmin(BasePermission):
 
     def has_permission(self, request, view):
 
-        return (request.user.is_authenticated and request.user.role == "ADMIN")
+        return (request.user.is_authenticated and request.user.role == request.user.Role.ADMIN)
 
     
 class IsStaff(BasePermission):
@@ -15,7 +15,7 @@ class IsStaff(BasePermission):
 
     def has_permission(self, request, view):
 
-        return ( request.user.is_authenticated and request.user.role == "STAFF")
+        return ( request.user.is_authenticated and request.user.role == request.user.Role.STAFF)
 
 
 class IsCustomer(BasePermission):
@@ -24,7 +24,7 @@ class IsCustomer(BasePermission):
 
     def has_permission(self, request, view):
 
-        return (request.user.is_authenticated and request.user.role == "CUSTOMER")
+        return (request.user.is_authenticated and request.user.role == request.user.Role.CUSTOMER)
 
     
 
@@ -37,7 +37,7 @@ class IsChef(BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        if request.user.role != "STAFF":
+        if request.user.role != request.user.Role.STAFF:
             return False
 
         if not hasattr(request.user, "staff_profile"):
@@ -56,7 +56,7 @@ class IsWaiter(BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        if request.user.role != "STAFF":
+        if request.user.role != request.user.Role.STAFF:
             return False
 
         if not hasattr(request.user, "staff_profile"):
@@ -76,7 +76,7 @@ class IsHelper(BasePermission):
         if not request.user.is_authenticated:
             return False
 
-        if request.user.role != "STAFF":
+        if request.user.role != request.user.Role.STAFF:
             return False
 
         if not hasattr(request.user, "staff_profile"):
