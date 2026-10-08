@@ -20,21 +20,17 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-
+from users.authentication import HotelTokenObtainPairView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/users/", include("users.urls")),
-    
-    path(
-        "api/auth/token/",
-        TokenObtainPairView.as_view(),
-        name="token_obtain_pair"
-    ),
 
-    path(
-        "api/auth/token/refresh/",
-        TokenRefreshView.as_view(),
-        name="token_refresh"
-    ),
+    path("api/auth/token/", HotelTokenObtainPairView.as_view(),name="token_obtain_pair"),
+
+    path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+
+    path( "api/staff/",include("staff.urls")),
+
+    
 ]
