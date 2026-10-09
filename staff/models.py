@@ -14,7 +14,6 @@ class StaffProfile(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="staff_profile"
-
     )
 
     role = models.CharField(

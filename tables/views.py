@@ -6,18 +6,17 @@ from .models import Table, Booking
 from .serializers import TableSerializer, BookingSerializer
 
 from staff.permissions import IsAdmin, IsCustomer
-# Create your views here.
 
 class TableListView(generics.ListAPIView):
 
-    queryset = Table.objects.filter(
-        is_active=True
-    )
+    queryset = Table.objects.filter(is_active=True)
 
     serializer_class = TableSerializer
 
     permission_classes = [
+
         IsAuthenticated
+        
     ]
 
 

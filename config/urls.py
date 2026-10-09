@@ -21,6 +21,11 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from users.authentication import HotelTokenObtainPairView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -32,6 +37,23 @@ urlpatterns = [
 
     path( "api/staff/",include("staff.urls")),
     path("api/tables/", include("tables.urls")),
+    path("api/menu/",include("menu.urls")),
+    path("api/orders/", include("orders.urls")),
+    path("api/admin-panel/", include("admin_panel.urls")),
+
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+
+    path(
+        "api/docs/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
+
+    path(
+        "api/redoc/",
+        SpectacularRedocView.as_view(url_name="schema"),
+        name="redoc",
+    ),
 
 
 ]
