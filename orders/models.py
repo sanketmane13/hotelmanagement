@@ -16,6 +16,12 @@ class Order(models.Model):
         SERVED = "SERVED", "Served"
         CANCELLED = "CANCELLED", "Cancelled"
 
+    class PaymentStatus(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        PAID = "PAID", "Paid"
+        FAILED = "FAILED", "Failed"
+        REFUNDED = "REFUNDED", "Refunded"
+
     customer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.PROTECT,
@@ -32,6 +38,12 @@ class Order(models.Model):
         max_length=20,
         choices=Status.choices,
         default=Status.PENDING
+    )
+
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.PENDING,
     )
 
     total_amount = models.DecimalField(

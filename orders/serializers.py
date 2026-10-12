@@ -157,8 +157,15 @@ class OrderSerializer(serializers.ModelSerializer):
             "table_number",
             "items",
             "status",
+            "payment_status",
             "total_amount",
             "created_at",
             "updated_at",
         ]
+
+
+class UpdateOrderPaymentStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ["payment_status"]
 

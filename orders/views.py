@@ -4,9 +4,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from staff.permissions import IsChef, IsWaiter, IsCustomer
+from staff.permissions import IsAdmin, IsChef, IsWaiter, IsCustomer
 from .models import Order
-from .serializers import CreateOrderSerializer, OrderSerializer
+from .serializers import (
+    CreateOrderSerializer,
+    OrderSerializer,
+    UpdateOrderPaymentStatusSerializer,
+)
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from staff.models import StaffProfile
@@ -57,6 +61,20 @@ class MyOrdersView(generics.ListAPIView):
         )
 
         return filter_orders(queryset, self.request.query_params)
+
+
+class AdminOrdersView(generics.ListAPIView):
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+    pagination_class = OrderPagination
+
+    def get_queryset(self):
+        return (
+            Order.objects
+            .select_related("customer", "table")
+            .prefetch_related("items__menu_item")
+            .order_by("-created_at")
+        )
 
 class ChefOrdersView(generics.ListAPIView):
 
@@ -202,6 +220,14 @@ class UpdateOrderStatusView(APIView):
             OrderSerializer(order).data,
             status=status.HTTP_200_OK,
         )
+
+
+class UpdateOrderPaymentStatusView(generics.UpdateAPIView):
+    queryset = Order.objects.all()
+    serializer_class = UpdateOrderPaymentStatusSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+
 class CancelMyOrderView(APIView):
     permission_classes = [IsAuthenticated]
 
