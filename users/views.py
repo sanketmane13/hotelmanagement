@@ -13,6 +13,10 @@ from rest_framework import status
 from .models import OTPVerification
 from .utils import generate_otp, send_otp_email
 from django.contrib.auth import get_user_model
+from rest_framework.generics import RetrieveAPIView
+from rest_framework.permissions import IsAuthenticated
+
+from .serializers import CurrentUserSerializer
 
 User = get_user_model()
 
@@ -110,5 +114,10 @@ class VerifyOTPView(generics.GenericAPIView):
             status=status.HTTP_200_OK
         )
     
+class CurrentUserView(RetrieveAPIView):
+    serializer_class = CurrentUserSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_object(self):
+        return self.request.user
 

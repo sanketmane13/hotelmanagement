@@ -69,3 +69,28 @@ class VerifyOTPSerializer(serializers.Serializer):
         min_length = 6,
         max_length = 6
     )
+
+
+class CurrentUserSerializer(serializers.ModelSerializer):
+    staff_role = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "phone",
+            "role",
+            "is_verified",
+            "staff_role",
+        ]
+
+    def get_staff_role(self, obj):
+        if obj.role != User.Role.STAFF:
+            return None
+
+        try:
+            return obj.staff_profile.role
+        except User.staff_profile.RelatedObjectDoesNotExist:
+            return None

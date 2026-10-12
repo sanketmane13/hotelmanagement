@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from .models import Table, Booking
 from .serializers import TableSerializer, BookingSerializer
@@ -78,10 +79,10 @@ class MyBookingsView(generics.ListAPIView):
 
         return Booking.objects.filter(
             user=self.request.user
-        ).select_related("table")
+        ).select_related("table").order_by("-created_at", "-pk")
 
 
-class CancelBookingView(generics.UpdateAPIView):
+class CancelBookingView(generics.GenericAPIView):
 
     serializer_class = BookingSerializer
 
@@ -96,10 +97,11 @@ class CancelBookingView(generics.UpdateAPIView):
             user=self.request.user
         )
 
-    def perform_update(self, serializer):
+    def patch(self, request, *args, **kwargs):
+        booking = self.get_object()
+        booking.status = Booking.Status.CANCELLED
+        booking.save(update_fields=["status", "updated_at"])
 
-        serializer.save(
-            status=Booking.Status.CANCELLED
-        )
+        return Response(self.get_serializer(booking).data)
 
         

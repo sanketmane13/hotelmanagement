@@ -49,7 +49,7 @@ class BookingSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
 
-        table = attrs["table"]
+        table =  attrs.get("table", self.instance.table if self.instance else None)
         booking_date = attrs["booking_date"]
         start_time = attrs["start_time"]
         end_time = attrs["end_time"]
