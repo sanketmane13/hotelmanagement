@@ -2,9 +2,15 @@ from django.shortcuts import render
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import status
+from django.db.models.deletion import ProtectedError
 
 from .models import Table, Booking
-from .serializers import TableSerializer, BookingSerializer
+from .serializers import (
+    TableSerializer,
+    TableStatusSerializer,
+    BookingSerializer,
+)
 
 from staff.permissions import IsAdmin, IsCustomer
 
@@ -19,6 +25,42 @@ class TableListView(generics.ListAPIView):
         IsAuthenticated
         
     ]
+
+
+class UpdateTableView(generics.UpdateAPIView):
+    queryset = Table.objects.all()
+    serializer_class = TableSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+
+class CreateTableView(generics.CreateAPIView):
+    queryset = Table.objects.all()
+    serializer_class = TableSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+
+class UpdateTableStatusView(generics.UpdateAPIView):
+    queryset = Table.objects.all()
+    serializer_class = TableStatusSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+
+class DeleteTableView(generics.DestroyAPIView):
+    queryset = Table.objects.all()
+    serializer_class = TableSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def destroy(self, request, *args, **kwargs):
+        table = self.get_object()
+        try:
+            table.delete()
+        except ProtectedError:
+            return Response(
+                {"detail": "Cannot delete a table that has bookings or orders."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AvailableTableListView(generics.ListAPIView):

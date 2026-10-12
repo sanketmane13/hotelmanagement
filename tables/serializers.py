@@ -20,6 +20,12 @@ class TableSerializer(serializers.ModelSerializer):
         ]
 
 
+class TableStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Table
+        fields = ["status"]
+
+
 class BookingSerializer(serializers.ModelSerializer):
 
     table_number = serializers.IntegerField(
