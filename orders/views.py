@@ -15,9 +15,18 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from staff.models import StaffProfile
 from rest_framework.filters import SearchFilter, OrderingFilter
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 
 from .filters import filter_orders
 from .pagination import OrderPagination
+
+ORDER_STATUS_PARAMETER = OpenApiParameter(
+    name="status",
+    type=str,
+    location=OpenApiParameter.QUERY,
+    enum=[value for value, _ in Order.Status.choices],
+    description="Filter orders by status.",
+)
 
 
 class CreateOrderView(generics.CreateAPIView):
@@ -30,6 +39,7 @@ class CreateOrderView(generics.CreateAPIView):
     ]
 
 
+@extend_schema_view(get=extend_schema(parameters=[ORDER_STATUS_PARAMETER]))
 class MyOrdersView(generics.ListAPIView):
 
     serializer_class = OrderSerializer
@@ -76,6 +86,7 @@ class AdminOrdersView(generics.ListAPIView):
             .order_by("-created_at")
         )
 
+@extend_schema_view(get=extend_schema(parameters=[ORDER_STATUS_PARAMETER]))
 class ChefOrdersView(generics.ListAPIView):
 
     serializer_class = OrderSerializer
@@ -123,27 +134,24 @@ class WaiterOrdersView(generics.ListAPIView):
         IsWaiter
     ]
 
-    filter_backends = [SearchFilter, OrderingFilter]
+    filter_backends = []
     pagination_class = OrderPagination
-
-    search_fields = [
-        "customer__username",
-        "items__menu_item__name",
-    ]
-
-    ordering_fields = ["created_at", "total_amount", "status"]
-    ordering = ["-created_at"]
 
     def get_queryset(self):
         queryset= (
             Order.objects
-            .filter(status=Order.Status.READY)
+            .filter(
+                status__in=[
+                    Order.Status.PREPARING,
+                    Order.Status.READY,
+                ]
+            )
             .select_related("customer", "table")
             .prefetch_related("items__menu_item")
             .order_by("created_at")
             .distinct()
         )
-        return filter_orders(queryset, self.request.query_params)
+        return queryset
 
 class UpdateOrderStatusView(APIView):
     permission_classes = [IsAuthenticated]
@@ -171,6 +179,7 @@ class UpdateOrderStatusView(APIView):
                 ],
                 Order.Status.READY: [
                     Order.Status.SERVED,
+                    Order.Status.DELIVERED,
                     Order.Status.CANCELLED,
                 ],
             }
@@ -191,7 +200,7 @@ class UpdateOrderStatusView(APIView):
             and user.staff_profile.role == StaffProfile.StaffRole.WAITER
         ):
             allowed_transitions = {
-                Order.Status.READY: [Order.Status.SERVED],
+                Order.Status.READY: [Order.Status.SERVED, Order.Status.DELIVERED],
             }
 
         else:

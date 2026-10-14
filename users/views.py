@@ -1,10 +1,11 @@
 
 from datetime import timedelta
 
+from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 
 from django.shortcuts import render
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from .serializers import RegisterSerializer, VerifyOTPSerializer
 
@@ -16,7 +17,9 @@ from django.contrib.auth import get_user_model
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from .serializers import CurrentUserSerializer
+from .serializers import CurrentUserSerializer, UserSerializer
+from .serializers import StaffManagementSerializer
+from staff.permissions import IsAdmin
 
 User = get_user_model()
 
@@ -120,4 +123,64 @@ class CurrentUserView(RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class AdminUserListView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get_queryset(self):
+        return User.objects.filter(role=User.Role.CUSTOMER).order_by("pk")
+
+
+class AdminUserDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get_queryset(self):
+        return User.objects.all()
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        try:
+            self.perform_destroy(instance)
+        except ProtectedError:
+            return Response(
+                {"detail": "Cannot delete user because the account is referenced by existing records."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AdminStaffCreateView(generics.ListCreateAPIView):
+    serializer_class = StaffManagementSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get_queryset(self):
+        return User.objects.filter(
+            role=User.Role.STAFF,
+            staff_profile__isnull=False,
+        ).select_related("staff_profile").order_by("pk")
+
+
+class AdminStaffDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = StaffManagementSerializer
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get_queryset(self):
+        return User.objects.filter(
+            role=User.Role.STAFF,
+            staff_profile__isnull=False,
+        ).select_related("staff_profile")
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        try:
+            self.perform_destroy(instance)
+        except ProtectedError:
+            return Response(
+                {"detail": "Cannot delete staff account because it is referenced by existing records."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)
 

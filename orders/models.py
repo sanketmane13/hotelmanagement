@@ -14,6 +14,7 @@ class Order(models.Model):
         PREPARING = "PREPARING", "Preparing"
         READY = "READY", "Ready"
         SERVED = "SERVED", "Served"
+        DELIVERED = "DELIVERED", "Delivered"
         CANCELLED = "CANCELLED", "Cancelled"
 
     class PaymentStatus(models.TextChoices):

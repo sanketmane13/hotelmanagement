@@ -6,6 +6,7 @@ from rest_framework.test import APIClient
 from datetime import timedelta
 
 from tables.models import Table
+from staff.models import StaffProfile
 from .models import Order
 from .serializers import OrderSerializer
 
@@ -138,3 +139,75 @@ class UpdateOrderPaymentStatusTests(TestCase):
 		)
 
 		self.assertEqual(response.status_code, 400)
+
+
+class WaiterOrderTests(TestCase):
+	def setUp(self):
+		user_model = get_user_model()
+		self.waiter = user_model.objects.create_user(
+			username="waiter",
+			email="waiter@example.com",
+			phone="3333333333",
+			password="test-password",
+			role=user_model.Role.STAFF,
+		)
+		StaffProfile.objects.create(
+			user=self.waiter,
+			role=StaffProfile.StaffRole.WAITER,
+		)
+		self.customer = user_model.objects.create_user(
+			username="customer",
+			email="customer@example.com",
+			phone="4444444444",
+			password="test-password",
+			role=user_model.Role.CUSTOMER,
+		)
+		self.table = Table.objects.create(table_number=2, capacity=2)
+		self.orders = [
+			Order.objects.create(
+				customer=self.customer,
+				table=self.table,
+				status=order_status,
+			)
+			for order_status in [
+				Order.Status.PREPARING,
+				Order.Status.READY,
+				Order.Status.SERVED,
+				Order.Status.DELIVERED,
+			]
+		]
+		self.client = APIClient()
+		self.client.force_authenticate(user=self.waiter)
+
+	def test_waiter_list_only_includes_preparing_and_ready_orders(self):
+		response = self.client.get(reverse("waiter-orders"))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(
+			{order["status"] for order in response.data["results"]},
+			{
+				Order.Status.PREPARING,
+				Order.Status.READY,
+			},
+		)
+
+	def test_waiter_list_ignores_search_and_ordering_parameters(self):
+		response = self.client.get(
+			reverse("waiter-orders"),
+			{"search": "no matching order", "ordering": "status"},
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.data["count"], 2)
+
+	def test_waiter_can_mark_ready_order_served(self):
+		ready_order = self.orders[1]
+		response = self.client.patch(
+			reverse("update-order-status", kwargs={"pk": ready_order.pk}),
+			{"status": Order.Status.SERVED},
+			format="json",
+		)
+
+		ready_order.refresh_from_db()
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(ready_order.status, Order.Status.SERVED)
