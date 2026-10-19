@@ -12,11 +12,7 @@ class StaffManagementSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
     email = serializers.EmailField()
     phone = serializers.CharField(max_length=15)
-    password = serializers.CharField(
-        write_only=True,
-        min_length=8,
-        required=False,
-    )
+    password = serializers.CharField( write_only=True, min_length=8, required=False,)
     role = serializers.ChoiceField(choices=StaffProfile.StaffRole.choices)
 
     def validate(self, attrs):
