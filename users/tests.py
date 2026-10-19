@@ -2,10 +2,64 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.test import APIClient
+from unittest.mock import patch
 
 from staff.models import StaffProfile
+from users.models import OTPVerification
 
 # Create your tests here.
+
+
+class LoginOTPGenerationTests(TestCase):
+	def setUp(self):
+		user_model = get_user_model()
+		self.user = user_model.objects.create_user(
+			username="customer",
+			email="customer@example.com",
+			phone="2222222222",
+			password="test-password",
+			is_verified=True,
+		)
+		self.client = APIClient()
+
+	@patch("users.views.send_otp_email")
+	def test_verified_user_can_request_login_otp(self, send_otp_email):
+		response = self.client.post(
+			reverse("login-otp"),
+			{
+				"user_id": str(self.user.pk),
+				"email": self.user.email,
+				"password": "test-password",
+			},
+			format="json",
+		)
+
+		self.assertEqual(response.status_code, 200)
+		otp_record = OTPVerification.objects.get(user=self.user)
+		self.assertEqual(otp_record.purpose, OTPVerification.Purpose.LOGIN)
+		self.assertFalse(otp_record.is_used)
+		self.assertTrue(self.user.is_verified)
+		send_otp_email.assert_called_once_with(
+			self.user,
+			otp_record.otp,
+			purpose=OTPVerification.Purpose.LOGIN,
+		)
+
+	@patch("users.views.send_otp_email")
+	def test_invalid_password_does_not_generate_or_send_login_otp(self, send_otp_email):
+		response = self.client.post(
+			reverse("login-otp"),
+			{
+				"user_id": str(self.user.pk),
+				"email": self.user.email,
+				"password": "incorrect-password",
+			},
+			format="json",
+		)
+
+		self.assertEqual(response.status_code, 401)
+		self.assertFalse(OTPVerification.objects.exists())
+		send_otp_email.assert_not_called()
 
 
 class AdminStaffManagementTests(TestCase):
