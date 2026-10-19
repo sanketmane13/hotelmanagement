@@ -55,9 +55,20 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL = 'users.User'
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-DEFAULT_FROM_EMAIL = 'noreply@hotelmanagement.local'
+EMAIL_HOST = 'localhost'
+
+EMAIL_PORT = '1025'
+
+EMAIL_HOST_USER=''
+
+EMAIL_HOST_PASSWORD =''
+
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = False
+
+DEFAULT_FROM_EMAIL = 'sanketmane0407@gmail.com'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

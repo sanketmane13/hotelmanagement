@@ -5,7 +5,7 @@ from django.db.models.deletion import ProtectedError
 from django.utils import timezone
 
 from django.shortcuts import render
-from rest_framework import generics, status
+from rest_framework import generics, serializers, status
 from rest_framework.permissions import AllowAny
 from .serializers import RegisterSerializer, VerifyOTPSerializer
 
@@ -24,8 +24,6 @@ from staff.permissions import IsAdmin
 User = get_user_model()
 
 
-
-# Create your views here.
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -56,6 +54,55 @@ class RegisterView(generics.CreateAPIView):
             status=status.HTTP_201_CREATED
         )
 
+class LoginOTPView(generics.GenericAPIView):
+    class RequestSerializer(serializers.Serializer):
+        user_id = serializers.CharField()
+        email = serializers.EmailField()
+        password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    serializer_class = RequestSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user_id = serializer.validated_data["user_id"]
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
+
+        user = User.objects.filter(email=email, username=user_id).first()
+        if user is None and user_id.isdecimal():
+            user = User.objects.filter(email=email, pk=user_id).first()
+
+        if user is None or not user.check_password(password):
+            return Response(
+                {"error": "Invalid user ID, email, or password."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if not user.is_verified:
+            return Response(
+                {"error": "Please verify your email before requesting a login OTP."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        otp = generate_otp()
+        OTPVerification.objects.create(
+            user=user,
+            otp=otp,
+            purpose=OTPVerification.Purpose.LOGIN,
+            expires_at=timezone.now() + timedelta(minutes=10),
+        )
+        send_otp_email(user, otp, purpose=OTPVerification.Purpose.LOGIN)
+
+        return Response(
+            {"message": "Login OTP sent to your email.", "email": user.email},
+            status=status.HTTP_200_OK,
+        )
+
+
+
 class VerifyOTPView(generics.GenericAPIView):
     serializer_class = VerifyOTPSerializer
     permission_classes = [AllowAny]
@@ -81,7 +128,6 @@ class VerifyOTPView(generics.GenericAPIView):
         otp_record = OTPVerification.objects.filter(
             user=user,
             otp=otp,
-            purpose=OTPVerification.Purpose.EMAIL_VERIFICATION,
             is_used=False
         ).order_by("-created_at").first()
 

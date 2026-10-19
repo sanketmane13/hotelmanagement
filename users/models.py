@@ -25,6 +25,7 @@ class OTPVerification(models.Model):
 
     class Purpose(models.TextChoices):
         EMAIL_VERIFICATION = "EMAIL_VERIFICATION", "Email Verification"
+        LOGIN = "LOGIN", "Login"
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,related_name="otp_verifications")
 
