@@ -40,6 +40,7 @@ urlpatterns = [
     path("api/menu/",include("menu.urls")),
     path("api/orders/", include("orders.urls")),
     path("api/admin-panel/", include("admin_panel.urls")),
+    path("api/payments/", include("payment.urls")),
 
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
 
@@ -54,6 +55,4 @@ urlpatterns = [
         SpectacularRedocView.as_view(url_name="schema"),
         name="redoc",
     ),
-
-
 ]

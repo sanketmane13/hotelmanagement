@@ -1,9 +1,9 @@
+from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APIClient
-from datetime import timedelta
 
 from tables.models import Table
 from staff.models import StaffProfile
@@ -168,6 +168,7 @@ class WaiterOrderTests(TestCase):
 				customer=self.customer,
 				table=self.table,
 				status=order_status,
+				payment_status=Order.PaymentStatus.PAID,
 			)
 			for order_status in [
 				Order.Status.PREPARING,
@@ -211,3 +212,35 @@ class WaiterOrderTests(TestCase):
 		ready_order.refresh_from_db()
 		self.assertEqual(response.status_code, 200)
 		self.assertEqual(ready_order.status, Order.Status.SERVED)
+
+	def test_unpaid_order_is_not_sent_to_waiters(self):
+		unpaid_order = Order.objects.create(
+			customer=self.customer,
+			table=self.table,
+			status=Order.Status.READY,
+		)
+
+		response = self.client.get(reverse("waiter-orders"))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertNotIn(
+			unpaid_order.pk,
+			[order["id"] for order in response.data["results"]],
+		)
+
+	def test_unpaid_order_cannot_be_marked_served(self):
+		unpaid_order = Order.objects.create(
+			customer=self.customer,
+			table=self.table,
+			status=Order.Status.READY,
+		)
+
+		response = self.client.patch(
+			reverse("update-order-status", kwargs={"pk": unpaid_order.pk}),
+			{"status": Order.Status.SERVED},
+			format="json",
+		)
+
+		unpaid_order.refresh_from_db()
+		self.assertEqual(response.status_code, 409)
+		self.assertEqual(unpaid_order.status, Order.Status.READY)

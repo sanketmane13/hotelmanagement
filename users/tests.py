@@ -1,4 +1,6 @@
 from django.test import TestCase
+from django.core import mail
+from django.test import override_settings
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.test import APIClient
@@ -6,8 +8,29 @@ from unittest.mock import patch
 
 from staff.models import StaffProfile
 from users.models import OTPVerification
+from users.utils import send_otp_email
 
 # Create your tests here.
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class OTPEmailTemplateTests(TestCase):
+	def test_otp_email_includes_text_and_html_templates(self):
+		user_model = get_user_model()
+		user = user_model(username="customer", email="customer@example.com")
+
+		send_otp_email(user, "012345")
+
+		self.assertEqual(len(mail.outbox), 1)
+		message = mail.outbox[0]
+		self.assertEqual(message.subject, "Hotel Management - Email Verification OTP")
+		self.assertEqual(message.to, ["customer@example.com"])
+		self.assertIn("012345", message.body)
+		self.assertIn("expires in 10 minutes", message.body)
+		self.assertEqual(len(message.alternatives), 1)
+		self.assertEqual(message.alternatives[0].mimetype, "text/html")
+		self.assertIn("012345", message.alternatives[0].content)
+		self.assertIn("email verification", message.alternatives[0].content)
 
 
 class LoginOTPGenerationTests(TestCase):

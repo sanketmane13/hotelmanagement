@@ -111,6 +111,7 @@ class ChefOrdersView(generics.ListAPIView):
         queryset= (
             Order.objects
             .filter(
+                payment_status=Order.PaymentStatus.PAID,
                 status__in=[
                     Order.Status.PENDING,
                     Order.Status.PREPARING,
@@ -141,6 +142,7 @@ class WaiterOrdersView(generics.ListAPIView):
         queryset= (
             Order.objects
             .filter(
+                payment_status=Order.PaymentStatus.PAID,
                 status__in=[
                     Order.Status.PREPARING,
                     Order.Status.READY,
@@ -220,6 +222,15 @@ class UpdateOrderStatusView(APIView):
                     )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if (
+            new_status != Order.Status.CANCELLED
+            and order.payment_status != Order.PaymentStatus.PAID
+        ):
+            return Response(
+                {"detail": "An order must be paid before it can be prepared."},
+                status=status.HTTP_409_CONFLICT,
             )
 
         order.status = new_status

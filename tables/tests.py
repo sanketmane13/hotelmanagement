@@ -1,4 +1,5 @@
 from datetime import date, time, timedelta
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -58,6 +59,47 @@ class CancelBookingTests(TestCase):
 			[booking["id"] for booking in response.data["results"]],
 			[newer_booking.pk, self.booking.pk],
 		)
+
+
+class BookingFeeTests(TestCase):
+	def setUp(self):
+		self.user = get_user_model().objects.create_user(
+			username="booking-customer",
+			email="booking-customer@example.com",
+			phone="1234567891",
+			password="test-password",
+		)
+		self.table = Table.objects.create(
+			table_number=10,
+			capacity=2,
+			booking_price="125.50",
+		)
+		self.client = APIClient()
+		self.client.force_authenticate(user=self.user)
+
+	def test_booking_saves_fixed_fee_independent_of_table_price(self):
+		response = self.client.post(
+			reverse("create-booking"),
+			{
+				"table": self.table.pk,
+				"booking_date": "2026-10-22",
+				"start_time": "10:00:00",
+				"end_time": "11:00:00",
+				"booking_price": "0.01",
+			},
+			format="json",
+		)
+
+		self.assertEqual(response.status_code, 201)
+		booking = Booking.objects.get(pk=response.data["id"])
+		self.assertEqual(booking.booking_price, Decimal("200.00"))
+		self.assertEqual(response.data["booking_price"], "200.00")
+		self.assertEqual(booking.status, Booking.Status.PENDING_PAYMENT)
+
+		self.table.booking_price = "200.00"
+		self.table.save(update_fields=["booking_price"])
+		booking.refresh_from_db()
+		self.assertEqual(booking.booking_price, Decimal("200.00"))
 
 
 class UpdateTableTests(TestCase):

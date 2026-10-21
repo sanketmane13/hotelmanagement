@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your {{ purpose_title }} code</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; color: #1f2937; font-family: Arial, Helvetica, sans-serif;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f3f4f6; padding: 32px 16px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width: 560px; background-color: #ffffff; border-radius: 12px; overflow: hidden;">
+                    <tr>
+                        <td style="background-color: #163a5f; padding: 28px 32px; color: #ffffff;">
+                            <p style="margin: 0; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase;">Hotel Management</p>
+                            <h1 style="margin: 12px 0 0; font-size: 24px; line-height: 1.3;">Your one-time code</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 32px;">
+                            <p style="margin: 0 0 16px; font-size: 16px; line-height: 1.6;">Hello {{ username }},</p>
+                            <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6;">
+                                Use the code below to complete your {{ purpose_label }}.
+                            </p>
+                            <p style="margin: 0 0 24px; padding: 18px; background-color: #f3f6fa; border: 1px solid #d9e2ec; border-radius: 8px; color: #163a5f; font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center;">
+                                {{ otp }}
+                            </p>
+                            <p style="margin: 0 0 12px; font-size: 14px; line-height: 1.6;"><strong>This code expires in 10 minutes.</strong></p>
+                            <p style="margin: 0; color: #5b6573; font-size: 14px; line-height: 1.6;">
+                                If you did not request this code, you can safely ignore this email. Do not share your code with anyone.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px 32px; background-color: #f9fafb; color: #6b7280; font-size: 12px; line-height: 1.5;">
+                            This is an automated message from Hotel Management. Please do not reply.
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

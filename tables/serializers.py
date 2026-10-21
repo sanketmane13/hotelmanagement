@@ -10,6 +10,7 @@ class TableSerializer(serializers.ModelSerializer):
             "id",
             "table_number",
             "capacity",
+            "booking_price",
             "location",
             "status",
             "is_active",
@@ -40,6 +41,7 @@ class BookingSerializer(serializers.ModelSerializer):
             "id",
             "table",
             "table_number",
+            "booking_price",
             "booking_date",
             "start_time",
             "end_time",
@@ -49,6 +51,7 @@ class BookingSerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             "id",
+            "booking_price",
             "status",
             "created_at",
         ]
@@ -78,7 +81,10 @@ class BookingSerializer(serializers.ModelSerializer):
         overlapping_booking = Booking.objects.filter(
             table=table,
             booking_date=booking_date,
-            status=Booking.Status.CONFIRMED,
+            status__in=[
+                Booking.Status.PENDING_PAYMENT,
+                Booking.Status.CONFIRMED,
+            ],
             start_time__lt=end_time,
             end_time__gt=start_time,
         ).exists()

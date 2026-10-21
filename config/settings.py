@@ -11,10 +11,13 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+load_dotenv(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
@@ -50,7 +53,8 @@ INSTALLED_APPS = [
     'menu',
     'orders',
     'drf_spectacular',
-    'corsheaders'
+    'corsheaders',
+    'payment'
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -69,6 +73,11 @@ EMAIL_USE_TLS = False
 EMAIL_USE_SSL = False
 
 DEFAULT_FROM_EMAIL = 'sanketmane0407@gmail.com'
+
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
+STRIPE_CHECKOUT_SUCCESS_URL = os.environ.get("STRIPE_CHECKOUT_SUCCESS_URL",)
+STRIPE_CHECKOUT_CANCEL_URL = os.environ.get("STRIPE_CHECKOUT_CANCEL_URL",)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

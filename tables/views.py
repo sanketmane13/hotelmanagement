@@ -86,7 +86,10 @@ class AvailableTableListView(generics.ListAPIView):
 
         booked_table_ids = Booking.objects.filter(
             booking_date=booking_date,
-            status=Booking.Status.CONFIRMED,
+            status__in=[
+                Booking.Status.PENDING_PAYMENT,
+                Booking.Status.CONFIRMED,
+            ],
             start_time__lt=end_time,
             end_time__gt=start_time,
         ).values_list("table_id",flat=True)
