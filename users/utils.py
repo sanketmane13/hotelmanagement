@@ -15,10 +15,12 @@ def send_otp_email(user, otp, purpose="EMAIL_VERIFICATION"):
         "purpose_label": purpose_label,
         "purpose_title": purpose_label.title(),
     }
+    
     text_message = render_to_string(
         "users/emails/otp_email.txt",
         context,
     )
+
     html_message = render_to_string(
         "users/emails/otp_email.html",
         context,

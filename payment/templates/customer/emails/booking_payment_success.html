@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Booking payment confirmed</title>
+</head>
+<body style="margin:0;padding:24px;background:#f4f6f8;font-family:Arial,sans-serif;color:#172554;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;">
+        <tr>
+            <td style="padding:28px;">
+                <h1 style="margin-top:0;">{{ hotel_name }}</h1>
+                <h2>Booking payment successful</h2>
+                <p>Hello {{ customer_name }},</p>
+                <p>We have received your table booking payment. Your payment is confirmed.</p>
+                <table role="presentation" cellspacing="0" cellpadding="6">
+                    <tr><th align="left">Booking ID</th><td>{{ booking.pk }}</td></tr>
+                    <tr><th align="left">Table</th><td>{{ table.table_number }}</td></tr>
+                    <tr><th align="left">Booking date</th><td>{{ booking.booking_date|date:"F j, Y" }}</td></tr>
+                    <tr><th align="left">Booking time</th><td>{{ booking.start_time|time:"g:i A" }}</td></tr>
+                    <tr><th align="left">Booking fee</th><td>₹{{ payment.amount }} {{ payment.currency }}</td></tr>
+                    <tr><th align="left">Payment ID</th><td>{{ payment.pk }}</td></tr>
+                    {% if payment.stripe_payment_intent_id %}
+                    <tr><th align="left">Stripe payment reference</th><td>{{ payment.stripe_payment_intent_id }}</td></tr>
+                    {% endif %}
+                    {% if payment.stripe_checkout_session_id %}
+                    <tr><th align="left">Stripe checkout reference</th><td>{{ payment.stripe_checkout_session_id }}</td></tr>
+                    {% endif %}
+                    <tr><th align="left">Status</th><td>Successful</td></tr>
+                </table>
+                <p>Thank you for choosing {{ hotel_name }}.</p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

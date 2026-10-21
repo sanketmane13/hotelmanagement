@@ -9,6 +9,7 @@ from django.utils import timezone
 from orders.models import Order
 from tables.models import Booking
 
+from .email_service import send_payment_confirmation_email
 from .models import Payment
 
 
@@ -86,7 +87,7 @@ def refund_payment(payment):
     )
 
 
-def apply_checkout_event(event):
+def apply_checkout_event(event, *, send_confirmation_email=False):
     event_type = event["type"]
     session = event["data"]["object"]
     payment = Payment.objects.select_related("order", "booking").filter(
@@ -127,6 +128,9 @@ def apply_checkout_event(event):
             elif payment.booking.status == Booking.Status.PENDING_PAYMENT:
                 payment.booking.status = Booking.Status.CONFIRMED
                 payment.booking.save(update_fields=["status", "updated_at"])
+            if send_confirmation_email:
+                return send_payment_confirmation_email(payment.pk)
+            
     elif event_type in {
         "checkout.session.async_payment_failed",
         "checkout.session.cancelled",

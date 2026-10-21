@@ -497,12 +497,27 @@ def stripe_webhook(request):
             signature,
             settings.STRIPE_WEBHOOK_SECRET,
         )
+        if not isinstance(event, dict):
+            event = event.to_dict()
     except (ValueError, stripe.error.SignatureVerificationError):
         return JsonResponse({"detail": "Invalid Stripe webhook signature."}, status=400)
 
     try:
         if event["type"].startswith("checkout.session."):
-            apply_checkout_event(event)
+            email_sent = apply_checkout_event(
+                event,
+                send_confirmation_email=True,
+            )
+            if email_sent is False:
+                return JsonResponse(
+                    {
+                        "detail": (
+                            "Payment was confirmed, but its confirmation "
+                            "email could not be sent."
+                        )
+                    },
+                    status=500,
+                )
         elif event["type"] == "charge.refunded":
             apply_refund_event(event)
     except (KeyError, TypeError, ValueError):

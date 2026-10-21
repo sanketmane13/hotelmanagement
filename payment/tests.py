@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import stripe
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -693,11 +694,19 @@ class PaymentAPITests(TestCase):
         order = Order.objects.create(
             customer=self.customer,
             table=self.table,
+            total_amount=Decimal("60.00"),
+            booking=self.booking,
+        )
+        OrderItem.objects.create(
+            order=order,
+            menu_item=self.menu_item,
+            quantity=2,
+            unit_price=Decimal("30.00"),
         )
         payment = Payment.objects.create(
             booking=self.booking,
             order=order,
-            amount=Decimal("125.50"),
+            amount=Decimal("60.00"),
             stripe_checkout_session_id="cs_test_webhook",
         )
         construct_event.return_value = {
@@ -724,6 +733,110 @@ class PaymentAPITests(TestCase):
         self.assertEqual(payment.status, Payment.PaymentStatus.SUCCESS)
         self.assertEqual(payment.stripe_payment_intent_id, "pi_test_paid")
         self.assertEqual(order.payment_status, Order.PaymentStatus.PAID)
+        self.assertTrue(payment.confirmation_email_sent)
+        self.assertEqual(len(mail.outbox), 1)
+        message = mail.outbox[0]
+        self.assertEqual(message.to, [self.customer.email])
+        self.assertIn(f"Order #{order.pk}", message.subject)
+        self.assertIn(f"Booking ID</th><td>{self.booking.pk}", message.alternatives[0][0])
+        self.assertIn("Test meal", message.alternatives[0][0])
+        self.assertIn(">2</td>", message.alternatives[0][0])
+        self.assertIn("₹60.00", message.alternatives[0][0])
+
+        duplicate_response = APIClient().post(
+            reverse("stripe-webhook"),
+            data=b'{"id":"evt_test"}',
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="test-signature",
+        )
+        self.assertEqual(duplicate_response.status_code, 200)
+        self.assertEqual(len(mail.outbox), 1)
+
+    @patch("payment.views.stripe.Webhook.construct_event")
+    def test_booking_payment_webhook_sends_booking_confirmation(
+        self,
+        construct_event,
+    ):
+        payment = Payment.objects.create(
+            booking=self.booking,
+            amount=Decimal("200.00"),
+            stripe_checkout_session_id="cs_booking_confirm",
+        )
+        construct_event.return_value = stripe.Event.construct_from(
+            {
+                "type": "checkout.session.completed",
+                "data": {
+                    "object": {
+                        "id": "cs_booking_confirm",
+                        "payment_status": "paid",
+                        "payment_intent": "pi_booking_confirm",
+                    }
+                }
+            },
+            "sk_test_for_unit_tests",
+        )
+
+        response = APIClient().post(
+            reverse("stripe-webhook"),
+            data=b'{"id":"evt_booking_confirm"}',
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="test-signature",
+        )
+
+        payment.refresh_from_db()
+        self.booking.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payment.status, Payment.PaymentStatus.SUCCESS)
+        self.assertEqual(self.booking.status, Booking.Status.CONFIRMED)
+        self.assertTrue(payment.confirmation_email_sent)
+        self.assertEqual(len(mail.outbox), 1)
+        body = mail.outbox[0].alternatives[0][0]
+        self.assertEqual(mail.outbox[0].to, [self.customer.email])
+        self.assertIn(f"Booking ID</th><td>{self.booking.pk}", body)
+        self.assertIn(f"Table</th><td>{self.table.table_number}", body)
+        self.assertIn("₹200.00", body)
+        self.assertIn("pi_booking_confirm", body)
+        self.assertIn("cs_booking_confirm", body)
+
+    @patch(
+        "payment.email_service.EmailMultiAlternatives.send",
+        side_effect=OSError("Email service unavailable"),
+    )
+    @patch("payment.views.stripe.Webhook.construct_event")
+    def test_email_failure_does_not_fail_payment_and_webhook_retries(
+        self,
+        construct_event,
+        send_email,
+    ):
+        payment = Payment.objects.create(
+            booking=self.booking,
+            amount=Decimal("200.00"),
+            stripe_checkout_session_id="cs_email_failure",
+        )
+        construct_event.return_value = {
+            "type": "checkout.session.completed",
+            "data": {
+                "object": {
+                    "id": "cs_email_failure",
+                    "payment_status": "paid",
+                }
+            },
+        }
+
+        response = APIClient().post(
+            reverse("stripe-webhook"),
+            data=b'{"id":"evt_email_failure"}',
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="test-signature",
+        )
+
+        payment.refresh_from_db()
+        self.booking.refresh_from_db()
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(payment.status, Payment.PaymentStatus.SUCCESS)
+        self.assertFalse(payment.confirmation_email_sent)
+        self.assertEqual(self.booking.status, Booking.Status.CONFIRMED)
+        send_email.assert_called_once()
 
     def test_successful_booking_payment_confirms_booking(self):
         payment = Payment.objects.create(
@@ -781,6 +894,9 @@ class PaymentAPITests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(payment.status, Payment.PaymentStatus.SUCCESS)
         self.assertEqual(self.booking.status, Booking.Status.CONFIRMED)
+        payment.refresh_from_db()
+        self.assertFalse(payment.confirmation_email_sent)
+        self.assertEqual(len(mail.outbox), 0)
         retrieve_session.assert_called_once_with("cs_returned_paid")
 
     @patch("payment.views.stripe.checkout.Session.retrieve")
