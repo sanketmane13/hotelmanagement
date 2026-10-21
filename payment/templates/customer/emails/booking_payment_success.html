@@ -2,35 +2,301 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Booking payment confirmed</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Invoice - {{ hotel_name }}</title>
 </head>
-<body style="margin:0;padding:24px;background:#f4f6f8;font-family:Arial,sans-serif;color:#172554;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;">
+
+<body style="margin:0;padding:0;background-color:#f3f4f6;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+
+    <!-- Main Container -->
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+        style="background-color:#f3f4f6;padding:35px 15px;">
         <tr>
-            <td style="padding:28px;">
-                <h1 style="margin-top:0;">{{ hotel_name }}</h1>
-                <h2>Booking payment successful</h2>
-                <p>Hello {{ customer_name }},</p>
-                <p>We have received your table booking payment. Your payment is confirmed.</p>
-                <table role="presentation" cellspacing="0" cellpadding="6">
-                    <tr><th align="left">Booking ID</th><td>{{ booking.pk }}</td></tr>
-                    <tr><th align="left">Table</th><td>{{ table.table_number }}</td></tr>
-                    <tr><th align="left">Booking date</th><td>{{ booking.booking_date|date:"F j, Y" }}</td></tr>
-                    <tr><th align="left">Booking time</th><td>{{ booking.start_time|time:"g:i A" }}</td></tr>
-                    <tr><th align="left">Booking fee</th><td>₹{{ payment.amount }} {{ payment.currency }}</td></tr>
-                    <tr><th align="left">Payment ID</th><td>{{ payment.pk }}</td></tr>
-                    {% if payment.stripe_payment_intent_id %}
-                    <tr><th align="left">Stripe payment reference</th><td>{{ payment.stripe_payment_intent_id }}</td></tr>
-                    {% endif %}
-                    {% if payment.stripe_checkout_session_id %}
-                    <tr><th align="left">Stripe checkout reference</th><td>{{ payment.stripe_checkout_session_id }}</td></tr>
-                    {% endif %}
-                    <tr><th align="left">Status</th><td>Successful</td></tr>
+            <td align="center">
+
+                <!-- Invoice Card -->
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0"
+                    style="max-width:680px;background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,0.08);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding:28px 32px;border-bottom:1px solid #e5e7eb;">
+
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+
+                                    <!-- Hotel Name -->
+                                    <td valign="top">
+                                        <div style="font-size:24px;font-weight:700;color:#111827;">
+                                            {{ hotel_name }}
+                                        </div>
+
+                                        <div style="font-size:13px;color:#6b7280;margin-top:5px;">
+                                            Table Booking & Payment Receipt
+                                        </div>
+                                    </td>
+
+                                    <!-- Invoice Label -->
+                                    <td align="right" valign="top">
+                                        <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;">
+                                            PAYMENT RECEIPT
+                                        </div>
+
+                                        <div style="font-size:14px;font-weight:600;color:#111827;margin-top:5px;">
+                                            #{{ payment.pk }}
+                                        </div>
+                                    </td>
+
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Success Banner -->
+                    <tr>
+                        <td style="padding:22px 32px 10px 32px;">
+
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background-color:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;">
+                                <tr>
+                                    <td style="padding:16px 18px;">
+
+                                        <div style="font-size:15px;font-weight:700;color:#047857;">
+                                            ✓ Payment Successful
+                                        </div>
+
+                                        <div style="font-size:13px;color:#065f46;margin-top:5px;">
+                                            Your table booking payment has been successfully received and confirmed.
+                                        </div>
+
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Greeting -->
+                    <tr>
+                        <td style="padding:18px 32px 10px 32px;">
+
+                            <div style="font-size:16px;font-weight:600;color:#111827;">
+                                Hello {{ customer_name }},
+                            </div>
+
+                            <div style="font-size:14px;line-height:1.6;color:#6b7280;margin-top:8px;">
+                                Thank you for choosing {{ hotel_name }}.
+                                Your table booking payment has been confirmed.
+                                Please keep this receipt for your records.
+                            </div>
+
+                        </td>
+                    </tr>
+
+                    <!-- Booking Details -->
+                    <tr>
+                        <td style="padding:20px 32px 10px 32px;">
+
+                            <div style="font-size:16px;font-weight:700;color:#111827;margin-bottom:12px;">
+                                Booking Details
+                            </div>
+
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+
+                                <tr>
+                                    <td style="padding:12px 15px;background:#f9fafb;font-size:13px;color:#6b7280;width:45%;">
+                                        Booking ID
+                                    </td>
+                                    <td style="padding:12px 15px;font-size:13px;font-weight:600;color:#111827;">
+                                        #{{ booking.pk }}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 15px;font-size:13px;color:#6b7280;">
+                                        Table Number
+                                    </td>
+                                    <td style="padding:12px 15px;font-size:13px;font-weight:600;color:#111827;">
+                                        Table {{ table.table_number }}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 15px;background:#f9fafb;font-size:13px;color:#6b7280;">
+                                        Booking Date
+                                    </td>
+                                    <td style="padding:12px 15px;background:#f9fafb;font-size:13px;font-weight:600;color:#111827;">
+                                        {{ booking.booking_date|date:"F j, Y" }}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:12px 15px;font-size:13px;color:#6b7280;">
+                                        Booking Time
+                                    </td>
+                                    <td style="padding:12px 15px;font-size:13px;font-weight:600;color:#111827;">
+                                        {{ booking.start_time|time:"g:i A" }}
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Payment Summary -->
+                    <tr>
+                        <td style="padding:20px 32px 10px 32px;">
+
+                            <div style="font-size:16px;font-weight:700;color:#111827;margin-bottom:12px;">
+                                Payment Summary
+                            </div>
+
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+
+                                <tr>
+                                    <td style="padding:14px 15px;font-size:13px;color:#6b7280;">
+                                        Booking Fee
+                                    </td>
+
+                                    <td align="right"
+                                        style="padding:14px 15px;font-size:15px;font-weight:700;color:#111827;">
+                                        ₹{{ payment.amount }} {{ payment.currency }}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td colspan="2"
+                                        style="border-top:1px solid #e5e7eb;padding:14px 15px;background:#f9fafb;">
+
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td style="font-size:14px;font-weight:700;color:#111827;">
+                                                    Total Paid
+                                                </td>
+
+                                                <td align="right"
+                                                    style="font-size:20px;font-weight:700;color:#047857;">
+                                                    ₹{{ payment.amount }}
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                    </td>
+                                </tr>
+
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Transaction Details -->
+                    <tr>
+                        <td style="padding:20px 32px 10px 32px;">
+
+                            <div style="font-size:16px;font-weight:700;color:#111827;margin-bottom:12px;">
+                                Transaction Details
+                            </div>
+
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="font-size:13px;">
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">
+                                        Payment ID
+                                    </td>
+                                    <td align="right" style="padding:8px 0;color:#111827;font-weight:600;">
+                                        {{ payment.pk }}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">
+                                        Currency
+                                    </td>
+                                    <td align="right" style="padding:8px 0;color:#111827;font-weight:600;">
+                                        {{ payment.currency }}
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">
+                                        Payment Status
+                                    </td>
+                                    <td align="right" style="padding:8px 0;">
+                                        <span style="display:inline-block;background:#dcfce7;color:#166534;padding:5px 10px;border-radius:20px;font-size:12px;font-weight:700;">
+                                            PAID
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                {% if payment.stripe_payment_intent_id %}
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">
+                                        Stripe Payment Reference
+                                    </td>
+                                    <td align="right" style="padding:8px 0;color:#111827;font-size:11px;word-break:break-all;">
+                                        {{ payment.stripe_payment_intent_id }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+
+                                {% if payment.stripe_checkout_session_id %}
+                                <tr>
+                                    <td style="padding:8px 0;color:#6b7280;">
+                                        Checkout Reference
+                                    </td>
+                                    <td align="right" style="padding:8px 0;color:#111827;font-size:11px;word-break:break-all;">
+                                        {{ payment.stripe_checkout_session_id }}
+                                    </td>
+                                </tr>
+                                {% endif %}
+
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Divider -->
+                    <tr>
+                        <td style="padding:20px 32px 0;">
+                            <div style="border-top:1px solid #e5e7eb;"></div>
+                        </td>
+                    </tr>
+
+                    <!-- Footer Message -->
+                    <tr>
+                        <td align="center" style="padding:24px 32px 28px;">
+
+                            <div style="font-size:14px;font-weight:600;color:#111827;">
+                                Thank you for choosing {{ hotel_name }}!
+                            </div>
+
+                            <div style="font-size:12px;color:#9ca3af;margin-top:7px;line-height:1.5;">
+                                This email serves as your official payment confirmation
+                                for the table booking.
+                            </div>
+
+                            <div style="font-size:11px;color:#9ca3af;margin-top:15px;">
+                                Please do not reply to this automated email.
+                            </div>
+
+                        </td>
+                    </tr>
+
                 </table>
-                <p>Thank you for choosing {{ hotel_name }}.</p>
+
+                <!-- Email Footer -->
+                <div style="max-width:680px;text-align:center;font-size:11px;color:#9ca3af;margin-top:18px;line-height:1.5;">
+                    © {{ hotel_name }}. All rights reserved.
+                </div>
+
             </td>
         </tr>
     </table>
+
 </body>
 </html>
