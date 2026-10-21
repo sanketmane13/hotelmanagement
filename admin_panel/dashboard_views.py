@@ -1,5 +1,5 @@
 
-from django.db.models import Count, Sum
+from django.db.models import Count, Q, Sum
 from django.utils import timezone
 
 from rest_framework.permissions import IsAuthenticated
@@ -12,6 +12,7 @@ from staff.models import StaffProfile
 from tables.models import Table
 from menu.models import Category, MenuItem
 from orders.models import Order, OrderItem
+from payment.models import Payment
 
 
 class AdminDashboardView(APIView):
@@ -96,6 +97,47 @@ class AdminDashboardView(APIView):
             for item in popular_items
         ]
 
+        payment_status_counts = {
+            status_value: 0
+            for status_value, _ in Payment.PaymentStatus.choices
+        }
+        payment_status_counts.update(
+            {
+                item["status"]: item["total"]
+                for item in Payment.objects.values("status").annotate(
+                    total=Count("id")
+                )
+            }
+        )
+
+        successful_payments = Payment.objects.filter(
+            status=Payment.PaymentStatus.SUCCESS
+        )
+        payment_amounts_by_currency = [
+            {
+                "currency": item["currency"],
+                "successful_total": item["successful_total"] or 0,
+                "booking_fees": item["booking_fees"] or 0,
+                "food_orders": item["food_orders"] or 0,
+                "successful_today": item["successful_today"] or 0,
+            }
+            for item in successful_payments.values("currency").annotate(
+                successful_total=Sum("amount"),
+                booking_fees=Sum(
+                    "amount",
+                    filter=Q(order__isnull=True),
+                ),
+                food_orders=Sum(
+                    "amount",
+                    filter=Q(order__isnull=False),
+                ),
+                successful_today=Sum(
+                    "amount",
+                    filter=Q(created_at__date=today),
+                ),
+            ).order_by("currency")
+        ]
+
         return Response({
             "date": today,
             "orders": {
@@ -106,6 +148,20 @@ class AdminDashboardView(APIView):
             "revenue": {
                 "total_served_orders": total_revenue,
                 "today_served_orders": today_revenue,
+            },
+            "payments": {
+                "total": sum(payment_status_counts.values()),
+                "by_status": payment_status_counts,
+                "successful": successful_payments.count(),
+                "amounts_by_currency": payment_amounts_by_currency,
+                "confirmation_emails": {
+                    "sent": successful_payments.filter(
+                        confirmation_email_sent=True
+                    ).count(),
+                    "pending": successful_payments.filter(
+                        confirmation_email_sent=False
+                    ).count(),
+                },
             },
             "users": {
                 "total": total_users,
